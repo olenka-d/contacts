@@ -35,6 +35,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<Contact>? contacts;
+
   @override
   void initState() {
     super.initState();
@@ -52,55 +53,60 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            "My contacts",
-            style: TextStyle(color: Colors.black),
+    return ContactsData(
+        contacts: contacts,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              "My contacts",
+              style: TextStyle(color: Colors.black),
+            ),
+            centerTitle: true,
+            backgroundColor: Colors.blue,
+            elevation: 0,
           ),
-          centerTitle: true,
-          backgroundColor: Colors.blue,
-          elevation: 0,
-        ),
-        body: (contacts) == null
-            ? Center(child: ElevatedButton(
-          child: Text('Get contacts'),
-          onPressed: () {
-            openAppSettings();
-          },
-        ),
-        )
-            : ListView.builder(
-          itemCount: contacts!.length,
-          itemBuilder: (BuildContext context, int index) {
-            Uint8List? image = contacts![index].photo;
-            String num = (contacts![index].phones.isNotEmpty) ? (contacts![index].phones.first.number) : "--";
-            return ListTile(
-              leading: (contacts![index].photo == null)
-                  ? const CircleAvatar(child: Icon(Icons.person))
-                  : CircleAvatar(backgroundImage: MemoryImage(image!)),
-              title: Text(
-                  "${contacts![index].name.first} ${contacts![index].name.last}"),
+          body: ContactList(),
+          /*(contacts) == null
+              ? Center(child: ElevatedButton(
+            child: Text('Get contacts'),
+            onPressed: () {
+              openAppSettings();
+            },
+          ),
+          )
+              : ListView.builder(
+                itemCount: contacts!.length,
+                itemBuilder: (BuildContext context, int index) {
+                  Uint8List? image = contacts![index].photo;
+                  String num = (contacts![index].phones.isNotEmpty) ? (contacts![index].phones.first.number) : "--";
+                  return ListTile(
+                    leading: (contacts![index].photo == null)
+                        ? const CircleAvatar(child: Icon(Icons.person))
+                        : CircleAvatar(backgroundImage: MemoryImage(image!)),
+                    title: Text(
+                        "${contacts![index].name.first} ${contacts![index].name.last}"),
 
-              onTap: () async {
-                if (contacts![index].phones.isNotEmpty) {
-                  final updatedContact = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DetailContact(contact: contacts![index]),
-                    ),
-                  );
-                  if (updatedContact != null) {
-                    // Update the contact in the list
-                    setState(() {
-                      contacts![index] = updatedContact;
-                    });
-                  }
-                }
-              },);
-          },
-        ));
+                    onTap: () async {
+                      if (contacts![index].phones.isNotEmpty) {
+                        final updatedContact = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DetailContact(contact: contacts![index]),
+                          ),
+                        );
+                        if (updatedContact != null) {
+                          // Update the contact in the list
+                          setState(() {
+                            contacts![index] = updatedContact;
+                          });
+                        }
+                      }
+                    },);
+                },
+              )
+          )*/
+        )
+    );
   }
 }
 
@@ -133,6 +139,7 @@ class _DetailContactState extends State<DetailContact> {
   }
 
   Widget build(BuildContext context) {
+    final contact = widget.contact;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -159,9 +166,9 @@ class _DetailContactState extends State<DetailContact> {
                   height: 100,
                   fit: BoxFit.cover,
                 )
-                    : widget.contact.photo != null
+                    : contact.photo != null //widget
                     ? Image.memory(
-                  widget.contact.photo!,
+                  contact.photo!,         //widget
                   width: 100,
                   height: 100,
                   fit: BoxFit.cover,
@@ -173,7 +180,7 @@ class _DetailContactState extends State<DetailContact> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Text(
-              widget.contact.name.first + ' ' + widget.contact.name.last,
+              contact.name.first + ' ' + contact.name.last, //widget
               style: const TextStyle(fontSize: 20),
             ),
           ),
@@ -181,9 +188,9 @@ class _DetailContactState extends State<DetailContact> {
             padding: const EdgeInsets.only(bottom: 16.0),
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: widget.contact.phones.length,
+              itemCount: contact.phones.length,  //widget
               itemBuilder: (BuildContext context, int index) {
-                String phoneNumber = widget.contact.phones[index].number;
+                String phoneNumber = contact.phones[index].number;  //widget
                 return ListTile(
                   title: Text('Phone: $phoneNumber'),
                 );
@@ -196,5 +203,58 @@ class _DetailContactState extends State<DetailContact> {
   }
 }
 
+class ContactsData extends InheritedWidget {
+  final List<Contact>? contacts;
+
+  ContactsData({
+    Key? key,
+    required this.contacts,
+    required Widget child,
+  }) : super(key: key, child: child);
+
+  static ContactsData? of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<ContactsData>();
+  }
+
+  @override
+  bool updateShouldNotify(ContactsData oldWidget) {
+    return oldWidget.contacts != contacts;
+  }
+}
+
+class ContactList extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final contacts = ContactsData
+        .of(context)
+        ?.contacts;
+    return ListView.builder(
+        itemCount: contacts!.length,
+        itemBuilder: (BuildContext context, int index) {
+          Uint8List? image = contacts[index].photo;
+          String num = (contacts![index].phones.isNotEmpty) ? (contacts![index]
+              .phones.first.number) : "--";
+          return ListTile(
+            leading: (contacts![index].photo == null)
+                ? const CircleAvatar(child: Icon(Icons.person))
+                : CircleAvatar(backgroundImage: MemoryImage(image!)),
+            title: Text(
+                "${contacts![index].name.first} ${contacts![index].name.last}"),
+
+            onTap: () async {
+              if (contacts![index].phones.isNotEmpty) {
+                final updatedContact = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        DetailContact(contact: contacts![index]),
+                  ),
+                );
+              }
+            },);
+        }
+    );
+  }
+}
 
 
